@@ -13,4 +13,5 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-task default: %i[test rubocop]
+default = ENV['CI'] ? %i[test] : %i[test rubocop]
+task default: default
