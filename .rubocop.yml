@@ -1,13 +1,58 @@
+---
+
+inherit_gem:
+  rubocop-sensible: 'config/rubocop.yml'
+
+require:
+  - rubocop-minitest
+  - rubocop-performance
+  - rubocop-rake
+
 AllCops:
-  TargetRubyVersion: 2.4
+  Exclude:
+    - 'bin/**'
+    - 'Rakefile'
+    - 'tiny_hooks.gemspec'
+  NewCops: enable
+  EnabledByDefault: true
+  TargetRubyVersion: 2.7
 
-Style/StringLiterals:
-  Enabled: true
-  EnforcedStyle: double_quotes
+# Oneline comment is not valid so until it gets valid, we disable it
+Bundler/GemComment:
+  Enabled: false
 
-Style/StringLiteralsInInterpolation:
-  Enabled: true
-  EnforcedStyle: double_quotes
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
 
-Layout/LineLength:
-  Max: 120
+Layout/MultilineAssignmentLayout:
+  EnforcedStyle: same_line
+
+Lint/ConstantResolution:
+  Enabled: false
+
+Metrics/MethodLength:
+  Max: 15
+
+Style/ConstantVisibility:
+  Exclude:
+    - 'lib/tiny_hooks/version.rb'
+
+Style/Copyright:
+  Enabled: false
+
+# I know what I do :)
+Style/DisableCopsWithinSourceCodeDirective:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/InlineComment:
+  Enabled: false
+
+Style/MethodCallWithArgsParentheses:
+  Enabled: false
+
+# There are so many cases we just want `if` expression!
+Style/MissingElse:
+  EnforcedStyle: case
