@@ -23,13 +23,13 @@ linter:
 #     config: config/reek.yml
 
 #   # RuboCop example. See https://help.sider.review/tools/ruby/rubocop
-#   rubocop:
-#     root_dir: project/
-#     dependencies:
-#       - rubocop-rails
-#       - { name: "rubocop-rspec", version: "2.1.0" }
-#     config: config/.rubocop.yml
-#     safe: true
+  rubocop:
+    dependencies:
+      - rubocop-minitest
+      - rubocop-performance
+      - rubocop-rake
+      - rubocop-sensible
+    safe: true
 
 #   # ShellCheck example. See https://help.sider.review/tools/shellscript/shellcheck
 #   shellcheck:
