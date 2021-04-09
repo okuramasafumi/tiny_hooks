@@ -40,19 +40,4 @@ module TinyHooks
   # rubocop:enable Metrics/MethodLength
 
   module_function :define_hook
-
-  # Restore original method from the registry
-  #
-  # @param [Symbol, String] target the name of the method to restore
-  def restore_original(target)
-    original = registry.fetch(target.to_sym) { instance_method(target) }
-    undef_method(target)
-    define_method(target, original)
-  end
-
-  private
-
-  def registry
-    @registry ||= {}
-  end
 end
