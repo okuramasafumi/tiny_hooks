@@ -1,8 +1,6 @@
 # TinyHooks
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/tiny_hooks`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+A tiny gem to define hooks.
 
 ## Installation
 
@@ -22,7 +20,26 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+`extend TinyHooks` in your class/module and you're all set to use `define_hook`!
+
+```ruby
+class MyClass
+  extend TinyHooks
+
+  def my_method
+    puts 'my method'
+  end
+
+  define_hook :before, :my_method do
+    puts 'my before hook'
+  end
+end
+
+MyClass.new.my_method
+# => "my before hook\nmy method\n"
+```
+
+TinyHooks shines when the class/module is the base class/module of your library and your users will inherit/include it. In these cases, end users can define hooks to the methods you provide. The only thing you have to do is to provide the list of methods.
 
 ## Development
 
