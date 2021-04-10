@@ -41,6 +41,16 @@ MyClass.new.my_method
 
 TinyHooks shines when the class/module is the base class/module of your library and your users will inherit/include it. In these cases, end users can define hooks to the methods you provide. The only thing you have to do is to provide the list of methods.
 
+## Difference between TinyHooks and ActiveSupport::Callbacks
+
+While `TinyHooks` and `ActiveSupport::Callbacks` share the same purpose, there are a few major differences.
+
+* `TinyHooks` doesn’t support halting, but will support in the future.
+* While `ActiveSupport::Callbacks` has a set of methods for callbacks to work, `TinyHooks` has only one method.
+* You can apply callbacks/hooks into any existing methods without any changes with `TinyHooks`, while you need to change methods to call `run_callbacks` method within them to apply callbacks with `ActiveSupport::Callbacks`.
+
+In short, `TinyHooks` is simpler while `ActiveSupport::Callbacks` allows more control over callbacks.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
