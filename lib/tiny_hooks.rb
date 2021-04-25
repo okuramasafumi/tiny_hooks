@@ -11,10 +11,6 @@ module TinyHooks
   # @api private
   def self.extended(mod)
     mod.class_eval { @@_originals ||= {} }
-    # mod.instance_variable_set(:@_originals, {}) unless mod.instance_variable_defined?(:@_originals)
-    # mod.define_singleton_method(:_originals) do
-    #   mod.instance_variable_get(:@_originals)
-    # end
   end
 
   # Define hook with kind and target method

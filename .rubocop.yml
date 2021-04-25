@@ -37,6 +37,9 @@ Security/Eval:
   Exclude:
     - 'test/**/*.rb'
 
+Style/ClassVars:
+  Enabled: false
+
 Style/ConstantVisibility:
   Exclude:
     - 'lib/tiny_hooks/version.rb'
