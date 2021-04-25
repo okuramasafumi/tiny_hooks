@@ -8,6 +8,15 @@ require_relative 'tiny_hooks/version'
 module TinyHooks
   class Error < StandardError; end
 
+  # @api private
+  def self.extended(mod)
+    mod.class_eval { @@_originals ||= {} }
+    # mod.instance_variable_set(:@_originals, {}) unless mod.instance_variable_defined?(:@_originals)
+    # mod.define_singleton_method(:_originals) do
+    #   mod.instance_variable_get(:@_originals)
+    # end
+  end
+
   # Define hook with kind and target method
   #
   # @param [Symbol, String] kind the kind of the hook, possible values are: :before, :after and :around
@@ -16,6 +25,8 @@ module TinyHooks
     raise ArgumentError, 'You must provide a block' unless block
 
     original_method = instance_method(target)
+    @@_originals[target.to_sym] = original_method unless @@_originals[target.to_sym]
+
     body = case kind.to_sym
            when :before
              _before(original_method, &block)
@@ -31,6 +42,16 @@ module TinyHooks
   end
 
   module_function :define_hook
+
+  # Restore original method
+  #
+  # @param [Symbol, String] target
+  def restore_original(target)
+    original_method = @@_originals[target.to_sym] || instance_method(target)
+
+    undef_method(target)
+    define_method(target, original_method)
+  end
 
   private
 

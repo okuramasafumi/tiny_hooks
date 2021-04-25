@@ -69,6 +69,16 @@ class TinyHooksTest < Minitest::Test
     end
   end
 
+  class C1Restore < C1
+    restore_original :a
+  end
+
+  class C7 < C
+    def b; end
+
+    restore_original :b
+  end
+
   def test_it_defines_before_hook
     c = C1.new
     assert_output("before a\na\n") { c.a }
@@ -97,5 +107,24 @@ class TinyHooksTest < Minitest::Test
   def test_it_defines_around_hook_twice
     c = C6.new
     assert_output("before a 2\nbefore a 1\na\nafter a 1\nafter a 2\n") { c.a }
+  end
+
+  def test_it_restores_original
+    c = C1Restore.new
+    assert_output("a\n") { c.a }
+  end
+
+  def test_it_does_nothing_when_restoring_methods_without_hooks
+    C7.new
+    assert true # No error
+  end
+
+  def test_it_raises_error_when_restoring_missing_methods
+    definition = <<~DEFINITION
+      class C8 < C
+        restore_original :missing
+      end
+    DEFINITION
+    assert_raises(NameError) { eval(definition) }
   end
 end
