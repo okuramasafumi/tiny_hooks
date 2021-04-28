@@ -86,7 +86,6 @@ MyClass.new.my_method
 
 While `TinyHooks` and `ActiveSupport::Callbacks` share the same purpose, there are a few major differences.
 
-* `TinyHooks` doesn’t support halting, but will support in the future.
 * While `ActiveSupport::Callbacks` has a set of methods for callbacks to work, `TinyHooks` has only one method.
 * You can apply callbacks/hooks into any existing methods without any changes with `TinyHooks`, while you need to change methods to call `run_callbacks` method within them to apply callbacks with `ActiveSupport::Callbacks`.
 
