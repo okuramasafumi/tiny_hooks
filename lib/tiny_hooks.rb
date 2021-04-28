@@ -8,28 +8,43 @@ require_relative 'tiny_hooks/version'
 module TinyHooks
   class Error < StandardError; end
 
+  HALTING = Object.new.freeze
+  private_constant :HALTING
+
   # @api private
   def self.extended(mod)
     mod.class_eval { @@_originals ||= {} }
+  end
+
+  # @api private
+  def self.with_halting(terminator, *args, **kwargs, &block)
+    hook_result = nil
+    abort_result = catch :abort do
+      hook_result = instance_exec(*args, **kwargs, &block)
+      true
+    end
+    return HALTING if abort_result.nil? && terminator == :abort
+    return HALTING if hook_result == false && terminator == :return_false
+
+    hook_result
   end
 
   # Define hook with kind and target method
   #
   # @param [Symbol, String] kind the kind of the hook, possible values are: :before, :after and :around
   # @param [Symbol, String] target the name of the targeted method
-  def define_hook(kind, target, &block)
+  # @param [Symbol] terminator choice for terminating execution, default is throwing abort symbol
+  def define_hook(kind, target, terminator: :abort, &block)
     raise ArgumentError, 'You must provide a block' unless block
+    raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
 
     original_method = instance_method(target)
     @@_originals[target.to_sym] = original_method unless @@_originals[target.to_sym]
 
     body = case kind.to_sym
-           when :before
-             _before(original_method, &block)
-           when :after
-             _after(original_method, &block)
-           when :around
-             _around(original_method, &block)
+           when :before then _before(original_method, terminator: terminator, &block)
+           when :after  then _after(original_method, &block)
+           when :around then _around(original_method, &block)
            else
              raise Error, "#{kind} is not supported."
            end
@@ -51,15 +66,19 @@ module TinyHooks
 
   private
 
-  def _before(original_method, &block)
+  def _before(original_method, terminator:, &block)
     if RUBY_VERSION >= '2.7'
       proc do |*args, **kwargs, &blk|
-        instance_exec(*args, **kwargs, &block)
+        result = TinyHooks.with_halting(terminator, *args, **kwargs, &block)
+        return if result == HALTING
+
         original_method.bind_call(self, *args, **kwargs, &blk)
       end
     else
       proc do |*args, &blk|
-        instance_exec(*args, &block)
+        result = TinyHooks.with_halting(terminator, *args, &block)
+        return if result == HALTING
+
         original_method.bind(self).call(*args, &blk)
       end
     end

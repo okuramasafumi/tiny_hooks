@@ -41,6 +41,47 @@ MyClass.new.my_method
 
 TinyHooks shines when the class/module is the base class/module of your library and your users will inherit/include it. In these cases, end users can define hooks to the methods you provide. The only thing you have to do is to provide the list of methods.
 
+### Halting
+
+You can halt hook and method body execution by `throw`ing `:abort`.
+
+```ruby
+class MyClass
+  extend TinyHooks
+
+  def my_method
+    puts 'my method'
+  end
+
+  define_hook :before, :my_method do
+    throw :abort
+    puts 'my before hook'
+  end
+end
+
+MyClass.new.my_method
+# => ""
+```
+
+You can change how to halt from two options: throwing `:abort` and returning `false`. This can be done via `terminator` option.
+
+```ruby
+class MyClass
+  extend TinyHooks
+
+  def my_method
+    puts 'my method'
+  end
+
+  define_hook :before, :my_method, terminator: :return_false do
+    false
+  end
+end
+
+MyClass.new.my_method
+# => ""
+```
+
 ## Difference between TinyHooks and ActiveSupport::Callbacks
 
 While `TinyHooks` and `ActiveSupport::Callbacks` share the same purpose, there are a few major differences.
