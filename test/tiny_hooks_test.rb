@@ -79,6 +79,37 @@ class TinyHooksTest < Minitest::Test
     restore_original :b
   end
 
+  class C8 < C
+    define_hook :before, :a do
+      throw :abort
+    end
+  end
+
+  class C9 < C
+    define_hook :before, :a do
+      nil
+    end
+  end
+
+  class C10 < C
+    define_hook :before, :a, terminator: :return_false do
+      false
+    end
+  end
+
+  class C11 < C
+    define_hook :before, :a, terminator: :return_false do
+      nil
+    end
+  end
+
+  class C12 < C
+    define_hook :around, :a do |original|
+      next
+      original.call # rubocop:disable Lint/UnreachableCode
+    end
+  end
+
   def test_it_defines_before_hook
     c = C1.new
     assert_output("before a\na\n") { c.a }
@@ -121,10 +152,35 @@ class TinyHooksTest < Minitest::Test
 
   def test_it_raises_error_when_restoring_missing_methods
     definition = <<~DEFINITION
-      class C8 < C
+      class CError < C
         restore_original :missing
       end
     DEFINITION
     assert_raises(NameError) { eval(definition) }
+  end
+
+  def test_it_stops_execution_when_hooks_throw_abort
+    c = C8.new
+    assert_output('') { c.a }
+  end
+
+  def test_it_does_not_stop_execution_when_hooks_returns_nil
+    c = C9.new
+    assert_output("a\n") { c.a }
+  end
+
+  def test_it_stops_execution_when_terminator_is_return_false_and_hook_returns_false
+    c = C10.new
+    assert_output('') { c.a }
+  end
+
+  def test_it_does_not_stop_execution_when_terminator_is_return_false_and_hook_returns_nil
+    c = C11.new
+    assert_output("a\n") { c.a }
+  end
+
+  def test_it_stops_execution_with_next_before_original
+    c = C12.new
+    assert_output('') { c.a }
   end
 end
