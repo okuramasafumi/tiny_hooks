@@ -8,12 +8,17 @@ require_relative 'tiny_hooks/version'
 module TinyHooks
   class Error < StandardError; end
 
+  class PrivateError < Error; end
+
   HALTING = Object.new.freeze
   private_constant :HALTING
 
   # @api private
   def self.extended(mod)
-    mod.class_eval { @@_originals ||= {} }
+    mod.class_eval do
+      @@_originals ||= {}
+      @@_public_only = false
+    end
   end
 
   # @api private
@@ -38,18 +43,17 @@ module TinyHooks
     raise ArgumentError, 'You must provide a block' unless block
     raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
 
-    original_method = instance_method(target)
+    begin
+      original_method = @@_public_only ? public_instance_method(target) : instance_method(target)
+    rescue NameError => e
+      raise unless e.message.include?('private')
+
+      raise TinyHooks::PrivateError, "Public only mode is on and hooks for private methods (#{target} for this time) are not available."
+    end
     @@_originals[target.to_sym] = original_method unless @@_originals[target.to_sym]
 
-    body = case kind.to_sym
-           when :before then _before(original_method, terminator: terminator, &block)
-           when :after  then _after(original_method, &block)
-           when :around then _around(original_method, &block)
-           else
-             raise Error, "#{kind} is not supported."
-           end
     undef_method(target)
-    define_method(target, &body)
+    define_method(target, &method_body(kind, original_method, terminator, &block))
   end
 
   module_function :define_hook
@@ -64,7 +68,27 @@ module TinyHooks
     define_method(target, original_method)
   end
 
+  # Enable public only mode
+  def public_only!
+    @@_public_only = true
+  end
+
+  # Disable public only mode
+  def include_private!
+    @@_public_only = false
+  end
+
   private
+
+  def method_body(kind, original_method, terminator, &block)
+    case kind.to_sym
+    when :before then _before(original_method, terminator: terminator, &block)
+    when :after  then _after(original_method, &block)
+    when :around then _around(original_method, &block)
+    else
+      raise Error, "#{kind} is not supported."
+    end
+  end
 
   def _before(original_method, terminator:, &block)
     if RUBY_VERSION >= '2.7'

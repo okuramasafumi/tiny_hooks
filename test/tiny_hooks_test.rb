@@ -9,6 +9,12 @@ class TinyHooksTest < Minitest::Test
     def a
       puts 'a'
     end
+
+    private
+
+    def b
+      puts 'b'
+    end
   end
 
   def test_that_it_has_a_version_number
@@ -110,6 +116,20 @@ class TinyHooksTest < Minitest::Test
     end
   end
 
+  class C13 < C
+    define_hook :before, :b do
+      puts 'before b'
+    end
+  end
+
+  class C14 < C
+    public_only!
+    include_private!
+    define_hook :before, :b do
+      puts 'before b'
+    end
+  end
+
   def test_it_defines_before_hook
     c = C1.new
     assert_output("before a\na\n") { c.a }
@@ -182,5 +202,27 @@ class TinyHooksTest < Minitest::Test
   def test_it_stops_execution_with_next_before_original
     c = C12.new
     assert_output('') { c.a }
+  end
+
+  def test_it_defines_hook_for_private_method
+    c = C13.new
+    assert_output("before b\nb\n") { c.__send__(:b) }
+  end
+
+  def test_it_raises_private_error_when_defining_hook_for_private_method_after_public_only_called
+    definition = <<~DEFINITION
+      class CPublic < C
+        public_only!
+        define_hook :before, :b do
+          puts 'before b'
+        end
+      end
+    DEFINITION
+    assert_raises(TinyHooks::PrivateError, 'Public only mode is on and hooks for private methods (b for this time) are not available.') { eval(definition) }
+  end
+
+  def test_it_defines_hook_for_private_method_after_include_private_called_even_when_public_only_is_called
+    c = C14.new
+    assert_output("before b\nb\n") { c.__send__(:b) }
   end
 end
