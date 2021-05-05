@@ -52,6 +52,8 @@ module TinyHooks
       raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
       raise TinyHooks::TargetError, "Hook for #{target} is not allowed" if @_targets != UNDEFINED_TARGETS && !@_targets.include?(target)
 
+      is_private = private_instance_methods.include?(target.to_sym)
+
       begin
         original_method = @_public_only ? public_instance_method(target) : instance_method(target)
       rescue NameError => e
@@ -63,6 +65,7 @@ module TinyHooks
 
       undef_method(target)
       define_method(target, &method_body(kind, original_method, terminator, &block))
+      private target if is_private
     end
 
     # Restore original method

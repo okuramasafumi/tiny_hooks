@@ -32,7 +32,7 @@ Lint/ConstantResolution:
 
 # `define_hook` is little too complex...
 Metrics/AbcSize:
-  Max: 25
+  Max: 30
 
 Metrics/ClassLength:
   Exclude:

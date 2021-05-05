@@ -273,7 +273,7 @@ class TinyHooksTest < Minitest::Test
   def test_when_it_includes_pattern_it_works_on_targets_matching_pattern
     d = D2.new
     assert_output("before a\na\n") { d.a }
-    assert_output("before c\nc\n") { d.c }
+    assert_output("before c\nc\n") { d.__send__(:c) }
     assert_output("before _c\n_c\n") { d.__send__(:_c) }
   end
 
@@ -310,7 +310,7 @@ class TinyHooksTest < Minitest::Test
     d = D4.new
     assert_output("before a\na\n") { d.a }
     assert_output("before b\nb\n") { d.b }
-    assert_output("before c\nc\n") { d.c }
+    assert_output("before c\nc\n") { d.__send__(:c) }
   end
 
   def test_when_it_excludes_pattern_it_does_not_work_on_targets_matching_pattern
@@ -346,5 +346,26 @@ class TinyHooksTest < Minitest::Test
       end
     DEFINITION
     assert_raises(TinyHooks::TargetError) { eval(defintion) }
+  end
+
+  class E
+    include TinyHooks
+
+    private
+
+    def a
+      puts 'a'
+    end
+  end
+
+  class E1 < E
+    define_hook :before, :a do
+      puts 'before a'
+    end
+  end
+
+  def test_it_does_not_change_method_visibility
+    e = E1.new
+    assert_raises(NameError) { e.a }
   end
 end
