@@ -4,7 +4,7 @@ require 'test_helper'
 
 class TinyHooksTest < Minitest::Test
   class C
-    extend TinyHooks
+    include TinyHooks
 
     def a
       puts 'a'
@@ -224,5 +224,127 @@ class TinyHooksTest < Minitest::Test
   def test_it_defines_hook_for_private_method_after_include_private_called_even_when_public_only_is_called
     c = C14.new
     assert_output("before b\nb\n") { c.__send__(:b) }
+  end
+
+  class D
+    include TinyHooks
+
+    def a
+      puts 'a'
+    end
+
+    def b
+      puts 'b'
+    end
+
+    def _b
+      puts '_b'
+    end
+
+    private
+
+    def c
+      puts 'c'
+    end
+
+    def _c
+      puts '_c'
+    end
+  end
+
+  class D1 < D
+    target! include_pattern: /(a|c)/
+  end
+
+  class D2 < D1
+    define_hook :before, :a do
+      puts 'before a'
+    end
+
+    define_hook :before, :c do
+      puts 'before c'
+    end
+
+    define_hook :before, :_c do
+      puts 'before _c'
+    end
+  end
+
+  def test_when_it_includes_pattern_it_works_on_targets_matching_pattern
+    d = D2.new
+    assert_output("before a\na\n") { d.a }
+    assert_output("before c\nc\n") { d.c }
+    assert_output("before _c\n_c\n") { d.__send__(:_c) }
+  end
+
+  def test_when_it_includes_pattern_it_does_not_work_on_targets_against_pattern
+    defintion = <<~DEFINITION
+      class DForB < D1
+        define_hook :before, :b do
+          puts 'before b'
+        end
+      end
+    DEFINITION
+    assert_raises(TinyHooks::TargetError) { eval(defintion) }
+  end
+
+  class D3 < D
+    target! exclude_pattern: /^_/
+  end
+
+  class D4 < D3
+    define_hook :before, :a do
+      puts 'before a'
+    end
+
+    define_hook :before, :b do
+      puts 'before b'
+    end
+
+    define_hook :before, :c do
+      puts 'before c'
+    end
+  end
+
+  def test_when_it_excludes_pattern_it_works_on_targets_against_pattern
+    d = D4.new
+    assert_output("before a\na\n") { d.a }
+    assert_output("before b\nb\n") { d.b }
+    assert_output("before c\nc\n") { d.c }
+  end
+
+  def test_when_it_excludes_pattern_it_does_not_work_on_targets_matching_pattern
+    defintion = <<~DEFINITION
+      class DForUnderscore < D3
+        define_hook :before, :_b do
+          puts 'before _b'
+        end
+      end
+    DEFINITION
+    assert_raises(TinyHooks::TargetError) { eval(defintion) }
+  end
+
+  class D5 < D
+    target! include_pattern: /b/, exclude_pattern: /^_/
+  end
+
+  class D6 < D5
+    define_hook :before, :b do
+      puts 'before b'
+    end
+  end
+
+  def test_when_it_includes_and_excludes_pattern_at_the_same_time_it_applies_include_first_and_then_exclude
+    d = D6.new
+    assert_output("before b\nb\n") { d.b }
+
+    defintion = <<~DEFINITION
+      class DForUnderscoreB < D5
+        define_hook :before, :_b do
+          puts 'before _b'
+        end
+      end
+    DEFINITION
+    assert_raises(TinyHooks::TargetError) { eval(defintion) }
   end
 end

@@ -20,11 +20,11 @@ Or install it yourself as:
 
 ## Usage
 
-`extend TinyHooks` in your class/module and you're all set to use `define_hook`!
+`include TinyHooks` in your class/module and you're all set to use `define_hook`!
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
@@ -47,7 +47,7 @@ You can halt hook and method body execution by `throw`ing `:abort`.
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
@@ -67,7 +67,7 @@ You can change how to halt from two options: throwing `:abort` and returning `fa
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
