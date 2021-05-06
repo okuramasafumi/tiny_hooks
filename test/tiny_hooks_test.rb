@@ -368,4 +368,19 @@ class TinyHooksTest < Minitest::Test
     e = E1.new
     assert_raises(NameError) { e.a }
   end
+
+  def test_it_raises_error_when_target_pattern_includes_method_but_it_is_private_and_public_only_is_called
+    definition = <<~DEFINITION
+      class EPublic < E
+        public_only!
+
+        target! include_pattern: /a/
+
+        define_hook :before, :a do
+          puts 'before a'
+        end
+      end
+    DEFINITION
+    assert_raises(TinyHooks::TargetError) { eval(definition) }
+  end
 end
