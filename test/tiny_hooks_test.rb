@@ -278,14 +278,14 @@ class TinyHooksTest < Minitest::Test
   end
 
   def test_when_it_includes_pattern_it_does_not_work_on_targets_against_pattern
-    defintion = <<~DEFINITION
+    definition = <<~DEFINITION
       class DForB < D1
         define_hook :before, :b do
           puts 'before b'
         end
       end
     DEFINITION
-    assert_raises(TinyHooks::TargetError) { eval(defintion) }
+    assert_raises(TinyHooks::TargetError) { eval(definition) }
   end
 
   class D3 < D
@@ -314,14 +314,14 @@ class TinyHooksTest < Minitest::Test
   end
 
   def test_when_it_excludes_pattern_it_does_not_work_on_targets_matching_pattern
-    defintion = <<~DEFINITION
+    definition = <<~DEFINITION
       class DForUnderscore < D3
         define_hook :before, :_b do
           puts 'before _b'
         end
       end
     DEFINITION
-    assert_raises(TinyHooks::TargetError) { eval(defintion) }
+    assert_raises(TinyHooks::TargetError) { eval(definition) }
   end
 
   class D5 < D
@@ -338,14 +338,14 @@ class TinyHooksTest < Minitest::Test
     d = D6.new
     assert_output("before b\nb\n") { d.b }
 
-    defintion = <<~DEFINITION
+    definition = <<~DEFINITION
       class DForUnderscoreB < D5
         define_hook :before, :_b do
           puts 'before _b'
         end
       end
     DEFINITION
-    assert_raises(TinyHooks::TargetError) { eval(defintion) }
+    assert_raises(TinyHooks::TargetError) { eval(definition) }
   end
 
   class E
