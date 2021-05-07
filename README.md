@@ -20,11 +20,11 @@ Or install it yourself as:
 
 ## Usage
 
-`extend TinyHooks` in your class/module and you're all set to use `define_hook`!
+`include TinyHooks` in your class/module and you're all set to use `define_hook`!
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
@@ -47,7 +47,7 @@ You can halt hook and method body execution by `throw`ing `:abort`.
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
@@ -67,7 +67,7 @@ You can change how to halt from two options: throwing `:abort` and returning `fa
 
 ```ruby
 class MyClass
-  extend TinyHooks
+  include TinyHooks
 
   def my_method
     puts 'my method'
@@ -81,6 +81,46 @@ end
 MyClass.new.my_method
 # => ""
 ```
+
+### Targeting for hooks
+
+You can limit the targets for hooks in two ways. You can enable hooks for public methods only by using `public_only!` method and include/exclude targets with Regexp pattern by using `targets!` method.
+
+```ruby
+class MyClass
+  include TinyHooks
+
+  def my_method
+    puts 'my method'
+  end
+
+  private
+
+  def my_private_method
+    puts 'my private method'
+  end
+end
+
+class MyClassWithPublicOnly < MyClass
+  public_only!
+
+  define_hook :before, :my_private_method do
+    puts 'my_private_method'
+  end
+  # => This causes PrivateError
+end
+
+class MyClassWithExclude < MyClass
+  target! exclude_pattern: /my_method/
+
+  define_hook :before, :my_method do
+    puts 'my_method'
+  end
+  # => This causes TargetError
+end
+```
+
+You can call `include_private!` method to disable the effect of `public_only!`.
 
 ## Difference between TinyHooks and ActiveSupport::Callbacks
 
