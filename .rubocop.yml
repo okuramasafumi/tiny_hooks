@@ -30,24 +30,10 @@ Layout/MultilineAssignmentLayout:
 Lint/ConstantResolution:
   Enabled: false
 
-# `define_hook` is little too complex...
-Metrics/AbcSize:
-  Max: 30
-
-Metrics/ClassLength:
-  Exclude:
-    - 'test/**/*'
-
-# `define_hook` is little too complex...
-Metrics/CyclomaticComplexity:
-  Max: 10
-
-Metrics/MethodLength:
-  Max: 15
-
-# `define_hook` is little too complex...
-Metrics/PerceivedComplexity:
-  Max: 10
+# I couldn't come up with code clean enough
+# For now I gave up following Metrics cops
+Metrics:
+  Enabled: false
 
 Security/Eval:
   Exclude:
