@@ -118,12 +118,17 @@ module TinyHooks
       end
     end
 
-    # rubocop:disable Style/SoleNestedConditional
     def _before(original_method, terminator:, if_proc:, &block)
       if RUBY_VERSION >= '2.7'
         proc do |*args, **kwargs, &blk|
           if if_proc.nil? || instance_exec(&if_proc) != false
-            return if TinyHooks.with_halting(terminator, *args, **kwargs, &block) == HALTING
+            hook_result = nil
+            abort_result = catch :abort do
+              hook_result = instance_exec(*args, **kwargs, &block)
+              true
+            end
+            return if abort_result.nil? && terminator == :abort
+            return if hook_result == false && terminator == :return_false
           end
 
           original_method.bind_call(self, *args, **kwargs, &blk)
@@ -131,14 +136,19 @@ module TinyHooks
       else
         proc do |*args, &blk|
           if if_proc.nil? || instance_exec(&if_proc) != false
-            return if TinyHooks.with_halting(terminator, *args, &block) == HALTING
+            hook_result = nil
+            abort_result = catch :abort do
+              hook_result = instance_exec(*args, &block)
+              true
+            end
+            return if abort_result.nil? && terminator == :abort
+            return if hook_result == false && terminator == :return_false
           end
 
           original_method.bind(self).call(*args, &blk)
         end
       end
     end
-    # rubocop:enable Style/SoleNestedConditional
 
     def _after(original_method, if_proc:, &block)
       if RUBY_VERSION >= '2.7'

@@ -226,6 +226,17 @@ class TinyHooksTest < Minitest::Test
     assert_output("before b\nb\n") { c.__send__(:b) }
   end
 
+  class C15 < C
+    define_hook :before, :a do
+      b
+    end
+  end
+
+  def test_it_defines_before_hook_calling_another_instance_method
+    c = C15.new
+    assert_output("b\na\n") { c.a }
+  end
+
   class D
     include TinyHooks
 
