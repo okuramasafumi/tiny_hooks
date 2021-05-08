@@ -383,4 +383,86 @@ class TinyHooksTest < Minitest::Test
     DEFINITION
     assert_raises(TinyHooks::TargetError) { eval(definition) }
   end
+
+  class F
+    include TinyHooks
+
+    def hook_enabled?
+      true
+    end
+
+    def a
+      puts 'a'
+    end
+  end
+
+  class F1 < F
+    define_hook :before, :a, if: proc { true } do
+      puts 'before a'
+    end
+  end
+
+  def test_it_defines_hook_when_if_option_set_and_proc_returns_true
+    f = F1.new
+    assert_output("before a\na\n") { f.a }
+  end
+
+  class F2 < F
+    define_hook :before, :a, if: proc { false } do
+      puts 'before a'
+    end
+  end
+
+  def test_it_does_not_define_hook_when_if_option_set_and_proc_returns_false
+    f = F2.new
+    assert_output("a\n") { f.a }
+  end
+
+  class F3 < F
+    define_hook :before, :a, if: proc { hook_enabled? } do
+      puts 'before a'
+    end
+  end
+
+  def test_it_defines_hook_when_if_option_set_and_proc_returns_true_with_instance_arg
+    f = F3.new
+    assert_output("before a\na\n") { f.a }
+  end
+
+  class F4 < F3
+    def hook_enabled?
+      false
+    end
+
+    define_hook :before, :a, if: proc { hook_enabled? } do
+      puts 'before a'
+    end
+  end
+
+  def test_it_does_not_define_hook_when_if_option_set_and_proc_returns_false_with_instance_arg
+    f = F4.new
+    assert_output("a\n") { f.a }
+  end
+
+  class F5 < F
+    define_hook :before, :a, if: -> { true }, terminator: :return_false do
+      false
+    end
+  end
+
+  def test_it_works_when_if_returns_true_and_terminated
+    f = F5.new
+    assert_output('') { f.a }
+  end
+
+  class F6 < F
+    define_hook :before, :a, if: -> { false }, terminator: :return_false do
+      false
+    end
+  end
+
+  def test_it_works_when_if_returns_false_and_terminated
+    f = F6.new
+    assert_output("a\n") { f.a }
+  end
 end

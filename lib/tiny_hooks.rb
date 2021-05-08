@@ -47,7 +47,8 @@ module TinyHooks
     # @param [Symbol, String] kind the kind of the hook, possible values are: :before, :after and :around
     # @param [Symbol, String] target the name of the targeted method
     # @param [Symbol] terminator choice for terminating execution, default is throwing abort symbol
-    def define_hook(kind, target, terminator: :abort, &block)
+    # @param [Symbol] if condition to determine if it should define callback. Block is evaluated in context of self
+    def define_hook(kind, target, terminator: :abort, if: nil, &block) # rubocop:disable Naming/MethodParameterName
       raise ArgumentError, 'You must provide a block' unless block
       raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
       raise TinyHooks::TargetError, "Hook for #{target} is not allowed" if @_targets != UNDEFINED_TARGETS && !@_targets.include?(target)
@@ -64,7 +65,7 @@ module TinyHooks
       @_originals[target.to_sym] = original_method unless @_originals[target.to_sym]
 
       undef_method(target)
-      define_method(target, &method_body(kind, original_method, terminator, &block))
+      define_method(target, &method_body(kind, original_method, terminator, binding.local_variable_get(:if), &block))
       private target if is_private
     end
 
@@ -107,58 +108,62 @@ module TinyHooks
 
     private
 
-    def method_body(kind, original_method, terminator, &block)
+    def method_body(kind, original_method, terminator, if_proc, &block)
       case kind.to_sym
-      when :before then _before(original_method, terminator: terminator, &block)
-      when :after  then _after(original_method, &block)
-      when :around then _around(original_method, &block)
+      when :before then _before(original_method, terminator: terminator, if_proc: if_proc, &block)
+      when :after  then _after(original_method, if_proc: if_proc, &block)
+      when :around then _around(original_method, if_proc: if_proc, &block)
       else
         raise Error, "#{kind} is not supported."
       end
     end
 
-    def _before(original_method, terminator:, &block)
+    # rubocop:disable Style/SoleNestedConditional
+    def _before(original_method, terminator:, if_proc:, &block)
       if RUBY_VERSION >= '2.7'
         proc do |*args, **kwargs, &blk|
-          result = TinyHooks.with_halting(terminator, *args, **kwargs, &block)
-          return if result == HALTING
+          if if_proc.nil? || instance_exec(&if_proc) != false
+            return if TinyHooks.with_halting(terminator, *args, **kwargs, &block) == HALTING
+          end
 
           original_method.bind_call(self, *args, **kwargs, &blk)
         end
       else
         proc do |*args, &blk|
-          result = TinyHooks.with_halting(terminator, *args, &block)
-          return if result == HALTING
+          if if_proc.nil? || instance_exec(&if_proc) != false
+            return if TinyHooks.with_halting(terminator, *args, &block) == HALTING
+          end
 
           original_method.bind(self).call(*args, &blk)
         end
       end
     end
+    # rubocop:enable Style/SoleNestedConditional
 
-    def _after(original_method, &block)
+    def _after(original_method, if_proc:, &block)
       if RUBY_VERSION >= '2.7'
         proc do |*args, **kwargs, &blk|
           original_method.bind_call(self, *args, **kwargs, &blk)
-          instance_exec(*args, **kwargs, &block)
+          instance_exec(*args, **kwargs, &block) if if_proc.nil? || instance_exec(&if_proc) != false
         end
       else
         proc do |*args, &blk|
           original_method.bind(self).call(*args, &blk)
-          instance_exec(*args, &block)
+          instance_exec(*args, &block) if if_proc.nil? || instance_exec(&if_proc) != false
         end
       end
     end
 
-    def _around(original_method, &block)
+    def _around(original_method, if_proc:, &block)
       if RUBY_VERSION >= '2.7'
         proc do |*args, **kwargs, &blk|
           wrapper = -> { original_method.bind_call(self, *args, **kwargs, &blk) }
-          instance_exec(wrapper, *args, **kwargs, &block)
+          instance_exec(wrapper, *args, **kwargs, &block) if if_proc.nil? || instance_exec(&if_proc) != false
         end
       else
         proc do |*args, &blk|
           wrapper = -> { original_method.bind(self).call(*args, &blk) }
-          instance_exec(wrapper, *args, &block)
+          instance_exec(wrapper, *args, &block) if if_proc.nil? || instance_exec(&if_proc) != false
         end
       end
     end
