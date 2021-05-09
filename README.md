@@ -122,6 +122,38 @@ end
 
 You can call `include_private!` method to disable the effect of `public_only!`.
 
+### Conditional hooks
+
+You can add `if` option to `define_hook` call. `if` option must be a Proc and is evaluated in context of an instance.
+
+```ruby
+class MyClass
+  include TinyHooks
+
+  def initialize(hook_enabled = true)
+    @hook_enabled = hook_enabled
+  end
+
+  def my_method
+    puts 'my method'
+  end
+
+  def hook_enabled?
+    @hook_enabled
+  end
+
+  define_hook :before, :my_method, if: -> { hook_enabled? } do
+    puts 'my before hook'
+  end
+end
+
+MyClass.new(true).my_method
+# => "my before hook\nmy method\n"
+
+MyClass.new(false).my_method
+# => "my method\n"
+```
+
 ## Difference between TinyHooks and ActiveSupport::Callbacks
 
 While `TinyHooks` and `ActiveSupport::Callbacks` share the same purpose, there are a few major differences.
