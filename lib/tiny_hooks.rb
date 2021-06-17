@@ -64,7 +64,6 @@ module TinyHooks
       end
       @_originals[target.to_sym] = original_method unless @_originals[target.to_sym]
 
-      undef_method(target)
       define_method(target, &method_body(kind, original_method, terminator, binding.local_variable_get(:if), &block))
       private target if is_private
     end
@@ -74,8 +73,6 @@ module TinyHooks
     # @param [Symbol, String] target
     def restore_original(target)
       original_method = @_originals[target.to_sym] || instance_method(target)
-
-      undef_method(target)
       define_method(target, original_method)
     end
 
