@@ -1,3 +1,5 @@
+[![Ruby](https://github.com/okuramasafumi/tiny_hooks/actions/workflows/main.yml/badge.svg)](https://github.com/okuramasafumi/tiny_hooks/actions/workflows/main.yml)
+
 # TinyHooks
 
 A tiny gem to define hooks.
