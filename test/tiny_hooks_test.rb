@@ -505,4 +505,125 @@ class TinyHooksTest < Minitest::Test
     f = F6.new
     assert_output("a\n") { f.a }
   end
+
+  class G
+    include TinyHooks
+
+    def a(string)
+      puts string
+    end
+
+    def b(string:)
+      puts string
+    end
+
+    def c(*args)
+      puts args.join
+    end
+  end
+
+  class G1 < G
+    define_hook :before, :a do
+      puts 'before a'
+    end
+  end
+
+  def test_it_defines_before_hook_with_one_argument
+    g = G1.new
+    assert_output("before a\na\n") { g.a('a') }
+  end
+
+  class G2 < G
+    define_hook :after, :a do
+      puts 'after a'
+    end
+  end
+
+  def test_it_defines_after_hook_with_one_argument
+    g = G2.new
+    assert_output("a\nafter a\n") { g.a('a') }
+  end
+
+  class G3 < G
+    define_hook :around, :a do |a|
+      puts 'before a'
+      a.call
+      puts 'after a'
+    end
+  end
+
+  def test_it_defines_around_hook_with_one_argument
+    g = G3.new
+    assert_output("before a\na\nafter a\n") { g.a('a') }
+  end
+
+  class G4 < G
+    define_hook :before, :b do
+      puts 'before b'
+    end
+  end
+
+  def test_it_defines_before_hook_with_one_keyword_argument
+    g = G4.new
+    assert_output("before b\nb\n") { g.b(string: 'b') }
+  end
+
+  class G5 < G
+    define_hook :after, :b do
+      puts 'after b'
+    end
+  end
+
+  def test_it_defines_after_hook_with_one_keyword_argument
+    g = G5.new
+    assert_output("b\nafter b\n") { g.b(string: 'b') }
+  end
+
+  class G6 < G
+    define_hook :around, :b do |b|
+      puts 'before b'
+      b.call
+      puts 'after b'
+    end
+  end
+
+  def test_it_defines_around_hook_with_one_keyword_argument
+    g = G6.new
+    assert_output("before b\nb\nafter b\n") { g.b(string: 'b') }
+  end
+
+  class G7 < G
+    define_hook :before, :c do
+      puts 'before c'
+    end
+  end
+
+  def test_it_defines_before_hook_with_rest_arguments
+    g = G7.new
+    assert_output("before c\nfoobar\n") { g.c('foo', 'bar') }
+  end
+
+  class G8 < G
+    define_hook :after, :c do
+      puts 'after c'
+    end
+  end
+
+  def test_it_defines_after_hook_with_rest_arguments
+    g = G8.new
+    assert_output("foobar\nafter c\n") { g.c('foo', 'bar') }
+  end
+
+  class G9 < G
+    define_hook :around, :c do |c|
+      puts 'before c'
+      c.call
+      puts 'after c'
+    end
+  end
+
+  def test_it_defines_around_hook_with_rest_arguments
+    g = G9.new
+    assert_output("before c\nfoobar\nafter c\n") { g.c('foo', 'bar') }
+  end
 end
