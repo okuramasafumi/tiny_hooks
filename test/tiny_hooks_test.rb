@@ -237,6 +237,35 @@ class TinyHooksTest < Minitest::Test
     assert_output("b\na\n") { c.a }
   end
 
+  class C16 < C
+    define_hook :before, :a, :b
+  end
+
+  def test_it_defines_hook_with_symbol_method_name
+    c = C16.new
+    assert_output("b\na\n") { c.a }
+  end
+
+  class C17 < C
+    define_hook :before, :a, :c
+  end
+
+  def test_it_raises_error_when_defining_hook_with_symbol_method_name_that_does_not_exist
+    c = C17.new
+    assert_raises(NoMethodError) { c.a }
+  end
+
+  class C17WithC < C17
+    def c
+      puts 'c'
+    end
+  end
+
+  def test_it_defines_hook_with_symbol_method_name_that_exists_in_child_class
+    c = C17WithC.new
+    assert_output("c\na\n") { c.a }
+  end
+
   class D
     include TinyHooks
 

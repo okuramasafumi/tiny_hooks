@@ -39,6 +39,27 @@ MyClass.new.my_method
 # => "my before hook\nmy method\n"
 ```
 
+You can also call `define_hook` with method name as a third argument.
+
+```ruby
+class MyClass
+  include TinyHooks
+
+  def my_method
+    puts 'my method'
+  end
+
+  def my_before_hook
+    puts 'my before hook'
+  end
+
+  define_hook :before, :my_method, :my_before_hook
+end
+
+MyClass.new.my_method
+# => "my before hook\nmy method\n"
+```
+
 TinyHooks shines when the class/module is the base class/module of your library and your users will inherit/include it. In these cases, end users can define hooks to the methods you provide. The only thing you have to do is to provide the list of methods.
 
 ### Halting

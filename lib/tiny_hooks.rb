@@ -46,10 +46,11 @@ module TinyHooks
     #
     # @param [Symbol, String] kind the kind of the hook, possible values are: :before, :after and :around
     # @param [Symbol, String] target the name of the targeted method
+    # @param hook_method_name [Symbol, String] the name of a method which should be called as a hook
     # @param [Symbol] terminator choice for terminating execution, default is throwing abort symbol
     # @param [Symbol] if condition to determine if it should define callback. Block is evaluated in context of self
-    def define_hook(kind, target, terminator: :abort, if: nil, &block) # rubocop:disable Naming/MethodParameterName
-      raise ArgumentError, 'You must provide a block' unless block
+    def define_hook(kind, target, hook_method_name = nil, terminator: :abort, if: nil, &block) # rubocop:disable Naming/MethodParameterName
+      raise ArgumentError, 'You must provide a block or hook_method_name' unless block || hook_method_name
       raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
       raise TinyHooks::TargetError, "Hook for #{target} is not allowed" if @_targets != UNDEFINED_TARGETS && !@_targets.include?(target)
 
@@ -63,6 +64,8 @@ module TinyHooks
         raise TinyHooks::PrivateError, "Public only mode is on and hooks for private methods (#{target} for this time) are not available."
       end
       @_originals[target.to_sym] = original_method unless @_originals[target.to_sym]
+
+      block ||= -> { __send__(hook_method_name) }
 
       define_method(target, &method_body(kind, original_method, terminator, binding.local_variable_get(:if), &block))
       private target if is_private
