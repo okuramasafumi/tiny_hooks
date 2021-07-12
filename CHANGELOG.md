@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [2.0.0] - 2021-07-12
+
+- Add ability to specify hook method with name
+- TinyHooks now works on class methods
+
 ## [1.0.0] - 2021-05-09
 
 - Support halting
