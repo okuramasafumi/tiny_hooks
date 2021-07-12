@@ -626,4 +626,160 @@ class TinyHooksTest < Minitest::Test
     g = G9.new
     assert_output("before c\nfoobar\nafter c\n") { g.c('foo', 'bar') }
   end
+
+  class H
+    include TinyHooks
+
+    def self.a
+      puts 'a'
+    end
+
+    def a
+      puts 'instance a'
+    end
+
+    class << self
+      private
+
+      def b
+        puts 'b'
+      end
+    end
+  end
+
+  class H1 < H
+    define_hook :before, :a, class_method: true do
+      puts 'before a'
+    end
+  end
+
+  def test_it_defines_before_hook_for_class_method
+    assert_output("before a\na\n") { H1.a }
+    assert_output("instance a\n") { H1.new.a }
+  end
+
+  class H2 < H
+    define_hook :after, :a, class_method: true do
+      puts 'after a'
+    end
+  end
+
+  def test_it_defines_after_hook_for_class_method
+    assert_output("a\nafter a\n") { H2.a }
+    assert_output("instance a\n") { H2.new.a }
+  end
+
+  class H3 < H
+    define_hook :around, :a, class_method: true do |a|
+      puts 'before a'
+      a.call
+      puts 'after a'
+    end
+  end
+
+  def test_it_defines_around_hook_for_class_method
+    assert_output("before a\na\nafter a\n") { H3.a }
+    assert_output("instance a\n") { H3.new.a }
+  end
+
+  class H4 < H
+    define_hook :before, :a, class_method: true do
+      puts 'before class a'
+    end
+
+    define_hook :before, :a, class_method: false do
+      puts 'before instance a'
+    end
+  end
+
+  def test_it_defines_before_hook_for_class_method_and_instance_method
+    assert_output("before class a\na\n") { H4.a }
+    assert_output("before instance a\ninstance a\n") { H4.new.a }
+  end
+
+  class H5 < H
+    define_hook :after, :a, class_method: true do
+      puts 'after class a'
+    end
+
+    define_hook :after, :a, class_method: false do
+      puts 'after instance a'
+    end
+  end
+
+  def test_it_defines_after_hook_for_class_method_and_instance_method
+    assert_output("a\nafter class a\n") { H5.a }
+    assert_output("instance a\nafter instance a\n") { H5.new.a }
+  end
+
+  class H6 < H
+    define_hook :around, :a, class_method: true do |a|
+      puts 'before class a'
+      a.call
+      puts 'after class a'
+    end
+
+    define_hook :around, :a, class_method: false do |a|
+      puts 'before instance a'
+      a.call
+      puts 'after instance a'
+    end
+  end
+
+  def test_it_defines_around_hook_for_class_method_and_instance_method
+    assert_output("before class a\na\nafter class a\n") { H6.a }
+    assert_output("before instance a\ninstance a\nafter instance a\n") { H6.new.a }
+  end
+
+  class H7 < H4
+    restore_original :a
+  end
+
+  def test_it_does_not_restore_original_for_class_method_when_called_without_class_method_option
+    assert_output("before class a\na\n") { H7.a }
+  end
+
+  class H8 < H4
+    restore_original :a, class_method: true
+  end
+
+  def test_it_does_restore_original_for_class_method_when_called_with_class_method_option
+    assert_output("a\n") { H8.a }
+  end
+
+  class H9 < H
+    target! exclude_pattern: /^a/
+  end
+
+  def test_it_raises_target_error_for_class_method
+    assert_raises(TinyHooks::TargetError) do
+      Class.new(H9) do
+        define_hook :before, :a, class_method: true do
+          puts 'before a'
+        end
+      end
+    end
+  end
+
+  class H10 < H
+    public_only!
+  end
+
+  def test_it_raises_private_error_for_class_method
+    assert_raises(TinyHooks::PrivateError) do
+      Class.new(H10) do
+        define_hook :before, :b, class_method: true do
+          puts 'before b'
+        end
+      end
+    end
+  end
+
+  class H11 < H
+    define_hook :before, :a, :b, class_method: true
+  end
+
+  def test_it_defines_hook_for_class_method_calling_another_class_method_specified_by_name
+    assert_output("b\na\n") { H11.a }
+  end
 end
