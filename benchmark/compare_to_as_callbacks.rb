@@ -41,9 +41,7 @@ Benchmark.driver do |x|
         puts 'saving...'
       end
 
-      define_hook :before, :save do
-        saving_message
-      end
+      define_hook :before, :save, :saving_message
 
       define_hook :after, :save do
         puts 'saved'
@@ -54,8 +52,57 @@ Benchmark.driver do |x|
     tiny_person = TinyPersonRecord.new
   RUBY
 
-  x.report 'ActiveSupport', %( person.save )
-  x.report 'TinyHooks', %( tiny_person.save )
+  x.report 'ActiveSupport Before', %( person.save )
+  x.report 'TinyHooks Before', %( tiny_person.save )
+end
+
+Benchmark.driver do |x|
+  x.prelude <<~RUBY
+    require 'active_support/callbacks'
+    require 'active_support/core_ext/object/blank'
+    class Record
+      include ActiveSupport::Callbacks
+      define_callbacks :save
+
+      def save
+        run_callbacks :save do
+          puts "- save"
+        end
+      end
+    end
+
+    class PersonRecord < Record
+      set_callback :save, :around, lambda { |record, block|
+        puts "saving..."
+        block.call
+        puts "saved"
+        }
+    end
+
+    require 'tiny_hooks'
+
+    class TinyRecord
+      include TinyHooks
+
+      def save
+        puts '- save'
+      end
+    end
+
+    class TinyPersonRecord < TinyRecord
+      define_hook :around, :save do |original|
+        puts "saving..."
+        original.call
+        puts "saved"
+      end
+    end
+
+    person = PersonRecord.new
+    tiny_person = TinyPersonRecord.new
+  RUBY
+
+  x.report 'ActiveSupport Around', %( person.save )
+  x.report 'TinyHooks Around', %( tiny_person.save )
 end
 
 Benchmark.driver do |x|
