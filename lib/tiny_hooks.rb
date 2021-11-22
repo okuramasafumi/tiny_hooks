@@ -28,19 +28,6 @@ module TinyHooks
     base.extend ClassMethods
   end
 
-  # @api private
-  def self.with_halting(terminator, *args, **kwargs, &block)
-    hook_result = nil
-    abort_result = catch :abort do
-      hook_result = instance_exec(*args, **kwargs, &block)
-      true
-    end
-    return HALTING if abort_result.nil? && terminator == :abort
-    return HALTING if hook_result == false && terminator == :return_false
-
-    hook_result
-  end
-
   # Class methods
   module ClassMethods
     # Define hook with kind and target method
