@@ -53,7 +53,7 @@ module TinyHooks
     # @param class_method [Boolean] treat target as class method
     def define_hook(kind, target, hook_method_name = nil, terminator: :abort, if: nil, class_method: false, &block) # rubocop:disable Naming/MethodParameterName
       raise ArgumentError, 'You must provide a block or hook_method_name' unless block || hook_method_name
-      raise ArgumentError, 'terminator must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
+      raise ArgumentError, '`terminator` must be one of the following: :abort or :return_false' unless %i[abort return_false].include? terminator.to_sym
       raise TinyHooks::TargetError, "Hook for #{target} is not allowed" if @_targets != UNDEFINED_TARGETS && !@_targets.include?(target)
 
       if class_method
